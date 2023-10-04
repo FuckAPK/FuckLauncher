@@ -35,7 +35,6 @@ public class MainHook implements IXposedHookLoadPackage {
                         if (!param.thisObject.getClass().getName().equals(CLASS_NAME)) {
                             return;
                         }
-                        XposedBridge.log("double tap detected " + param.thisObject.getClass().getName());
                         Shell.cmd("input keyevent 223").exec();
                         param.setResult(true);
                     }
