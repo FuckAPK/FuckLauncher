@@ -27,7 +27,7 @@ public class MainHook implements IXposedHookLoadPackage {
     private static final String ACTION = "org.baiyu.fucklauncher.LockScreen";
     private static final String PREF_KEY = "key";
 
-    private static XSharedPreferences prefs;
+    private static final XSharedPreferences prefs = new XSharedPreferences(BuildConfig.APPLICATION_ID);
 
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
@@ -45,7 +45,7 @@ public class MainHook implements IXposedHookLoadPackage {
                         }
                         Context mContext = AndroidAppHelper.currentApplication();
 
-                        prefs = new XSharedPreferences(BuildConfig.APPLICATION_ID);
+                        prefs.reload();
                         String key = prefs.getString(PREF_KEY, null);
 
                         Intent intent = new Intent(ACTION)
