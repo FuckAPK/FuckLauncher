@@ -21,8 +21,10 @@ public class LockScreenReceiver extends BroadcastReceiver {
         SharedPreferences prefs = getPrefs(context);
 
         String key = prefs.getString(PREF_KEY, null);
+
         if (key == null) {
-            key = generateKey(prefs);
+            generateKey(prefs);
+            return;
         }
 
         if (key.equals(intent.getStringExtra(PREF_KEY))) {
@@ -47,11 +49,10 @@ public class LockScreenReceiver extends BroadcastReceiver {
         return prefs;
     }
 
-    private String generateKey(SharedPreferences prefs) {
+    private void generateKey(SharedPreferences prefs) {
         SharedPreferences.Editor editor = prefs.edit();
         String key = UUID.randomUUID().toString();
         editor.putString(PREF_KEY, key);
         editor.apply();
-        return key;
     }
 }

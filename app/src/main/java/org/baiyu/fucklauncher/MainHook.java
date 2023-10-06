@@ -23,7 +23,11 @@ public class MainHook implements IXposedHookLoadPackage {
             "com.android.launcher3"
     ));
     private static final String CLASS_NAME = "com.android.launcher3.touch.WorkspaceTouchListener";
-    private static final XSharedPreferences prefs = new XSharedPreferences(BuildConfig.APPLICATION_ID);
+    private static final String METHOD_NAME = "onDoubleTap";
+    private static final String ACTION = "org.baiyu.fucklauncher.LockScreen";
+    private static final String PREF_KEY = "key";
+
+    private static XSharedPreferences prefs;
 
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
@@ -32,7 +36,7 @@ public class MainHook implements IXposedHookLoadPackage {
         }
 
         XposedBridge.hookMethod(
-                GestureDetector.SimpleOnGestureListener.class.getMethod("onDoubleTap", MotionEvent.class),
+                GestureDetector.SimpleOnGestureListener.class.getMethod(METHOD_NAME, MotionEvent.class),
                 new XC_MethodHook() {
                     @Override
                     protected void beforeHookedMethod(MethodHookParam param) {
@@ -41,11 +45,12 @@ public class MainHook implements IXposedHookLoadPackage {
                         }
                         Context mContext = AndroidAppHelper.currentApplication();
 
-                        String key = prefs.getString("key", null);
+                        prefs = new XSharedPreferences(BuildConfig.APPLICATION_ID);
+                        String key = prefs.getString(PREF_KEY, null);
 
-                        Intent intent = new Intent("org.baiyu.fucklauncher.LockScreen")
+                        Intent intent = new Intent(ACTION)
                                 .setComponent(new ComponentName(BuildConfig.APPLICATION_ID, LockScreenReceiver.class.getName()))
-                                .putExtra("key", key);
+                                .putExtra(PREF_KEY, key);
                         mContext.sendBroadcast(intent);
 
                         param.setResult(true);
