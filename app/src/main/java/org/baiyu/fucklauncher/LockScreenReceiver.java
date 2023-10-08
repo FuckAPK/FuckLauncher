@@ -24,12 +24,17 @@ public class LockScreenReceiver extends BroadcastReceiver {
 
         if (key == null) {
             generateKey(prefs);
+            grantRoot();
             return;
         }
 
         if (key.equals(intent.getStringExtra(PREF_KEY))) {
             lockScreen();
         }
+    }
+
+    private void grantRoot() {
+        Shell.cmd("ls /data").exec();
     }
 
     private void lockScreen() {
