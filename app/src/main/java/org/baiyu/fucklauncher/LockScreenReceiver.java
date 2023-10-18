@@ -5,7 +5,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.util.Log;
 
 import com.topjohnwu.superuser.Shell;
 
@@ -13,22 +12,22 @@ import java.util.UUID;
 
 public class LockScreenReceiver extends BroadcastReceiver {
 
-    private static final String PREF_KEY = "key";
-
     @Override
     public void onReceive(Context context, Intent intent) {
 
         SharedPreferences prefs = getPrefs(context);
+        Settings settings = Settings.getInstance(prefs);
 
-        String key = prefs.getString(PREF_KEY, null);
+        String PREF_AUTH_KEY = settings.getPrefAuthKey();
+        String AUTH_KEY = settings.getAuthKey();
 
-        if (key == null) {
-            generateKey(prefs);
+        if (AUTH_KEY == null) {
+            settings.setAuthKey(UUID.randomUUID().toString());
             grantRoot();
             return;
         }
 
-        if (key.equals(intent.getStringExtra(PREF_KEY))) {
+        if (AUTH_KEY.equals(intent.getStringExtra(PREF_AUTH_KEY))) {
             lockScreen();
         }
     }
@@ -41,23 +40,18 @@ public class LockScreenReceiver extends BroadcastReceiver {
         Shell.cmd("input keyevent 223").exec();
     }
 
-    /** @noinspection deprecation*/
+    /**
+     * @noinspection deprecation
+     */
     @SuppressLint("WorldReadableFiles")
     private SharedPreferences getPrefs(Context context) {
-        SharedPreferences prefs = null;
+        SharedPreferences prefs;
         try {
             prefs = context.getSharedPreferences(BuildConfig.APPLICATION_ID + "_preferences", Context.MODE_WORLD_READABLE);
         } catch (SecurityException e) {
-            Log.e("fucklauncher", e.toString());
+            prefs = context.getSharedPreferences(BuildConfig.APPLICATION_ID + "_preferences", Context.MODE_PRIVATE);
         }
         assert prefs != null;
         return prefs;
-    }
-
-    private void generateKey(SharedPreferences prefs) {
-        SharedPreferences.Editor editor = prefs.edit();
-        String key = UUID.randomUUID().toString();
-        editor.putString(PREF_KEY, key);
-        editor.apply();
     }
 }
