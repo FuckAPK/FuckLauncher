@@ -7,8 +7,10 @@ import android.content.Intent;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Objects;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
@@ -55,7 +57,7 @@ public class MainHook implements IXposedHookLoadPackage {
                                     .setComponent(new ComponentName(BuildConfig.APPLICATION_ID, LockScreenReceiver.class.getName()))
                                     .putExtra(PREF_AUTH_KEY, AUTH_KEY);
                             mContext.sendBroadcast(intent);
-
+                            XposedBridge.log("LockScreen intent sent");
                             param.setResult(true);
                         }
                     }
@@ -65,22 +67,17 @@ public class MainHook implements IXposedHookLoadPackage {
         }
 
         try {
-            XposedHelpers.findAndHookMethod(
-                    "com.android.launcher3.uioverrides.flags.FlagsFactory",
-                    lpparam.classLoader,
+            XposedBridge.hookAllMethods(
+                    XposedHelpers.findClass("com.android.launcher3.uioverrides.flags.FlagsFactory", lpparam.classLoader),
                     "getDebugFlag",
-                    int.class,
-                    String.class,
-                    boolean.class,
-                    String.class,
                     new XC_MethodHook() {
                         @Override
-                        protected void beforeHookedMethod(MethodHookParam param) {
-                            if ("ENABLE_FORCED_MONO_ICON".equals((String) param.args[1])) {
+                        protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                            if ("ENABLE_FORCED_MONO_ICON".equals(param.args[1])) {
                                 prefs.reload();
                                 if (settings.enableForcedMonoIcon()) {
-                                    XposedBridge.log("ENABLE_FORCED_MONO_ICON hooked");
-                                    param.args[2] = true;
+                                    XposedHelpers.setBooleanField(param.getResult(), "mCurrentValue", true);
+                                    XposedBridge.log("Mono Icon enabled.");
                                 }
                             }
                         }
