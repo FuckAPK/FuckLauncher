@@ -1,0 +1,54 @@
+plugins {
+    id("com.android.application")
+    id("kotlin-android")
+}
+
+android {
+    namespace = "org.baiyu.fucklauncher"
+    compileSdk = 34
+
+    defaultConfig {
+        applicationId = "org.baiyu.fucklauncher"
+        minSdk = 26
+        targetSdk = 34
+        versionCode = 7
+        versionName = "5.0"
+
+        resourceConfigurations += setOf("en")
+
+        vectorDrawables {
+            useSupportLibrary = true
+        }
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+        debug {
+            applicationIdSuffix = ".debug"
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+    buildFeatures {
+        buildConfig = true
+    }
+}
+
+dependencies {
+    implementation("androidx.core:core-ktx:1.13.0")
+    implementation("androidx.preference:preference-ktx:1.2.1")
+    implementation("com.github.topjohnwu.libsu:core:5.2.2")
+    compileOnly("de.robv.android.xposed:api:82")
+}

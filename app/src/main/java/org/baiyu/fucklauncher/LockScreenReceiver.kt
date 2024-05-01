@@ -1,57 +1,54 @@
-package org.baiyu.fucklauncher;
+package org.baiyu.fucklauncher
 
-import android.annotation.SuppressLint;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.SharedPreferences;
+import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.SharedPreferences
+import com.topjohnwu.superuser.Shell
+import java.util.UUID
 
-import com.topjohnwu.superuser.Shell;
+class LockScreenReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        val prefs = getPrefs(context)
+        val settings: Settings = Settings.getInstance(prefs)
 
-import java.util.UUID;
+        val prefAuthKey = Settings.PREF_AUTH_KEY
+        val authKey = settings.authKey
 
-public class LockScreenReceiver extends BroadcastReceiver {
-
-    @Override
-    public void onReceive(Context context, Intent intent) {
-
-        SharedPreferences prefs = getPrefs(context);
-        Settings settings = Settings.getInstance(prefs);
-
-        String PREF_AUTH_KEY = settings.getPrefAuthKey();
-        String AUTH_KEY = settings.getAuthKey();
-
-        if (AUTH_KEY == null) {
-            settings.setAuthKey(UUID.randomUUID().toString());
-            grantRoot();
-            return;
+        if (authKey == null) {
+            settings.authKey = UUID.randomUUID().toString()
+            // grant root
+            lockScreen()
+            return
         }
 
-        if (AUTH_KEY.equals(intent.getStringExtra(PREF_AUTH_KEY))) {
-            lockScreen();
+        if (authKey == intent.getStringExtra(prefAuthKey)) {
+            lockScreen()
         }
     }
 
-    private void grantRoot() {
-        Shell.cmd("ls /data").exec();
-    }
-
-    private void lockScreen() {
-        Shell.cmd("input keyevent 223").exec();
+    private fun lockScreen() {
+        Shell.cmd("input keyevent 223").exec()
     }
 
     /**
      * @noinspection deprecation
      */
     @SuppressLint("WorldReadableFiles")
-    private SharedPreferences getPrefs(Context context) {
-        SharedPreferences prefs;
-        try {
-            prefs = context.getSharedPreferences(BuildConfig.APPLICATION_ID + "_preferences", Context.MODE_WORLD_READABLE);
-        } catch (SecurityException e) {
-            prefs = context.getSharedPreferences(BuildConfig.APPLICATION_ID + "_preferences", Context.MODE_PRIVATE);
+    private fun getPrefs(context: Context): SharedPreferences {
+        val prefsName = "${BuildConfig.APPLICATION_ID}_preferences"
+        return try {
+            @Suppress("DEPRECATION")
+            context.getSharedPreferences(
+                prefsName,
+                Context.MODE_WORLD_READABLE
+            )
+        } catch (ignore: SecurityException) {
+            context.getSharedPreferences(
+                prefsName,
+                Context.MODE_PRIVATE
+            )
         }
-        assert prefs != null;
-        return prefs;
     }
 }
