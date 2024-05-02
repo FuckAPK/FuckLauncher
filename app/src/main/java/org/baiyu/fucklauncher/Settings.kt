@@ -5,11 +5,11 @@ import kotlin.concurrent.Volatile
 
 class Settings private constructor(private val prefs: SharedPreferences) {
     fun enableDoubleTapToSleep(): Boolean {
-        return prefs.getBoolean(PREF_ENABLE_DOUBLE_TAP_TO_SLEEP, false)
+        return prefs.getBoolean(PREF_ENABLE_DOUBLE_TAP_TO_SLEEP, true)
     }
 
     fun enableForcedMonoIcon(): Boolean {
-        return prefs.getBoolean(PREF_ENABLE_FORCED_MONO_ICON, false)
+        return prefs.getBoolean(PREF_ENABLE_FORCED_MONO_ICON, true)
     }
 
     var authKey: String?

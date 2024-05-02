@@ -13,18 +13,14 @@ class LockScreenReceiver : BroadcastReceiver() {
         val prefs = getPrefs(context)
         val settings: Settings = Settings.getInstance(prefs)
 
-        val prefAuthKey = Settings.PREF_AUTH_KEY
-        val authKey = settings.authKey
+        when (settings.authKey) {
+            null -> {
+                settings.authKey = UUID.randomUUID().toString()
+            }
 
-        if (authKey == null) {
-            settings.authKey = UUID.randomUUID().toString()
-            // grant root
-            lockScreen()
-            return
-        }
-
-        if (authKey == intent.getStringExtra(prefAuthKey)) {
-            lockScreen()
+            intent.getStringExtra(Settings.PREF_AUTH_KEY) -> {
+                lockScreen()
+            }
         }
     }
 

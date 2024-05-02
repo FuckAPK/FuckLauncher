@@ -13,8 +13,8 @@ android {
         applicationId = "org.baiyu.fucklauncher"
         minSdk = 26
         targetSdk = 34
-        versionCode = 7
-        versionName = "5.0"
+        versionCode = 8
+        versionName = "5.1"
 
         resourceConfigurations += setOf("en")
 
@@ -62,7 +62,7 @@ android {
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.13.0")
+    implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.preference:preference-ktx:1.2.1")
     implementation("com.github.topjohnwu.libsu:core:5.2.2")
     compileOnly("de.robv.android.xposed:api:82")
