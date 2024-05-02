@@ -9,5 +9,6 @@
         app:defaultValue="true"
         app:iconSpaceReserved="false"
         app:key="enable_forced_mono_icon"
-        app:title="@string/title_enable_forced_mono_icon" />
+        app:title="@string/title_enable_forced_mono_icon"
+        app:summary="@string/summary_enable_forced_mono_icon" />
 </PreferenceScreen>
