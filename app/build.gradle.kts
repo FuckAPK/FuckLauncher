@@ -13,8 +13,8 @@ android {
         applicationId = "org.baiyu.fucklauncher"
         minSdk = 26
         targetSdk = 34
-        versionCode = 8
-        versionName = "5.1"
+        versionCode = 9
+        versionName = "6.0"
 
         resourceConfigurations += setOf("en")
 
@@ -50,11 +50,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = "21"
     }
     buildFeatures {
         buildConfig = true
