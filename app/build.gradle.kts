@@ -64,6 +64,6 @@ android {
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.preference:preference-ktx:1.2.1")
-    implementation("com.github.topjohnwu.libsu:core:5.3.0")
+    implementation("com.github.topjohnwu.libsu:core:6.0.0")
     compileOnly("de.robv.android.xposed:api:82")
 }
