@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Fuck Launcher</string>
+    <string name="app_desc">Double click to lock screen!</string>
+    <string name="title_enable_double_tap_to_sleep">Double tap to sleep</string>
+    <string name="title_enable_forced_mono_icon">Force Mono icon</string>
+    <string name="summary_enable_forced_mono_icon">re-enable themed icon in launcher to make it work</string>
+</resources>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+    <SwitchPreferenceCompat
+        app:defaultValue="true"
+        app:iconSpaceReserved="false"
+        app:key="enable_double_tap_to_sleep"
+        app:title="@string/title_enable_double_tap_to_sleep" />
+    <SwitchPreferenceCompat
+        app:defaultValue="true"
+        app:iconSpaceReserved="false"
+        app:key="enable_forced_mono_icon"
+        app:title="@string/title_enable_forced_mono_icon"
+        app:summary="@string/summary_enable_forced_mono_icon" />
+</PreferenceScreen>
