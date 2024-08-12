@@ -37,9 +37,6 @@ class MainHook : IXposedHookLoadPackage {
 
                         val mContext: Context = AndroidAppHelper.currentApplication()
 
-                        val prefAuthKey = Settings.PREF_AUTH_KEY
-                        val authKey = settings.authKey
-
                         val intent = Intent("org.lyaaz.fucklauncher.LockScreen")
                             .setComponent(
                                 ComponentName(
@@ -47,7 +44,7 @@ class MainHook : IXposedHookLoadPackage {
                                     LockScreenReceiver::class.java.name
                                 )
                             )
-                            .putExtra(prefAuthKey, authKey)
+                            .putExtra(Settings.PREF_AUTH_KEY, settings.authKey)
                         mContext.sendBroadcast(intent)
                         XposedBridge.log("LockScreen intent sent")
                         param.result = true
