@@ -51,7 +51,7 @@ class MainHook : IXposedHookLoadPackage {
                     "getDebugFlag",
                     Int::class.java,
                     String::class.java,
-                    "com.android.launcher3.config.FeatureFlags.FlagState",
+                    "com.android.launcher3.config.FeatureFlags\$FlagState",
                     String::class.java
                 )
             }
