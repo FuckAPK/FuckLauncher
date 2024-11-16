@@ -9,6 +9,7 @@ import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.XC_MethodHook
+import de.robv.android.xposed.XC_MethodReplacement
 import de.robv.android.xposed.XSharedPreferences
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
@@ -67,6 +68,15 @@ class MainHook : IXposedHookLoadPackage {
                     XposedBridge.hookMethod(
                         lineageos21Method,
                         GetDebugFlagHook
+                    )
+                }
+
+                Build.VERSION_CODES.VANILLA_ICE_CREAM -> {
+                    XposedHelpers.findAndHookMethod(
+                        "com.android.launcher3.Flags",
+                        lpparam.classLoader,
+                        "forceMonochromeAppIcons",
+                        XC_MethodReplacement.returnConstant(true)
                     )
                 }
 
