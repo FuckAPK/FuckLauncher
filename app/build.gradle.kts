@@ -1,7 +1,7 @@
 import java.io.ByteArrayOutputStream
 import java.util.Properties
 
-plugins {
+plugins { 
     id("com.android.application")
     id("kotlin-android")
 }
