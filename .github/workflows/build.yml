@@ -15,7 +15,7 @@ on:
 
 jobs:
   build:
-    uses: FuckAPK/workflows/.github/workflows/build.yml@main
-    permissions:
-      contents: write
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+    - name: test
+      run: echo "what if a harmful pr?"
