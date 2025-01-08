@@ -1,7 +1,6 @@
 package org.lyaaz.fucklauncher
 
 import android.content.SharedPreferences
-import kotlin.concurrent.Volatile
 
 class Settings private constructor(private val prefs: SharedPreferences) {
     fun enableDoubleTapToSleep(): Boolean {
@@ -21,8 +20,8 @@ class Settings private constructor(private val prefs: SharedPreferences) {
         }
 
     companion object {
-        private const val PREF_ENABLE_DOUBLE_TAP_TO_SLEEP = "enable_double_tap_to_sleep"
-        private const val PREF_ENABLE_FORCED_MONO_ICON = "enable_forced_mono_icon"
+        const val PREF_ENABLE_DOUBLE_TAP_TO_SLEEP = "enable_double_tap_to_sleep"
+        const val PREF_ENABLE_FORCED_MONO_ICON = "enable_forced_mono_icon"
         const val PREF_AUTH_KEY = "auth_key"
 
         @Volatile

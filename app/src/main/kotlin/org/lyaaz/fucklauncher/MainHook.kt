@@ -7,12 +7,7 @@ import android.content.Intent
 import android.os.Build
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
-import de.robv.android.xposed.IXposedHookLoadPackage
-import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XC_MethodReplacement
-import de.robv.android.xposed.XSharedPreferences
-import de.robv.android.xposed.XposedBridge
-import de.robv.android.xposed.XposedHelpers
+import de.robv.android.xposed.*
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 
 class MainHook : IXposedHookLoadPackage {
