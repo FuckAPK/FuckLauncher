@@ -51,6 +51,7 @@ class MainHook : IXposedHookLoadPackage {
                     String::class.java
                 )
             }
+
             when (Build.VERSION.SDK_INT) {
                 Build.VERSION_CODES.TIRAMISU -> {
                     XposedBridge.hookMethod(
@@ -71,7 +72,7 @@ class MainHook : IXposedHookLoadPackage {
                         "com.android.launcher3.Flags",
                         lpparam.classLoader,
                         "forceMonochromeAppIcons",
-                        XC_MethodReplacement.returnConstant(true)
+                        ForceMonoAppIconHook
                     )
                 }
 
@@ -123,6 +124,20 @@ class MainHook : IXposedHookLoadPackage {
                         XposedHelpers.setBooleanField(param.result, "mCurrentValue", true)
                         XposedBridge.log("Mono Icon enabled.")
                     }
+                }
+            }.onFailure {
+                XposedBridge.log(it)
+            }
+        }
+    }
+
+    object ForceMonoAppIconHook : XC_MethodHook() {
+        override fun afterHookedMethod(param: MethodHookParam) {
+            runCatching {
+                prefs.reload()
+                if (settings.enableForcedMonoIcon()) {
+                    param.result = true
+                    XposedBridge.log("Mono Icon enabled.")
                 }
             }.onFailure {
                 XposedBridge.log(it)
