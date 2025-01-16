@@ -4,6 +4,8 @@ import android.app.AndroidAppHelper
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.drawable.AdaptiveIconDrawable
+import android.graphics.drawable.Drawable
 import android.os.Build
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
@@ -29,50 +31,31 @@ class MainHook : IXposedHookLoadPackage {
         }
 
         runCatching {
-            val lineageos20Method by lazy {
-                XposedHelpers.findMethodExact(
-                    "com.android.launcher3.uioverrides.flags.FlagsFactory",
-                    lpparam.classLoader,
-                    "getDebugFlag",
-                    Int::class.java,
-                    String::class.java,
-                    Boolean::class.java,
-                    String::class.java
-                )
-            }
-            val lineageos21Method by lazy {
-                XposedHelpers.findMethodExact(
-                    "com.android.launcher3.uioverrides.flags.FlagsFactory",
-                    lpparam.classLoader,
-                    "getDebugFlag",
-                    Int::class.java,
-                    String::class.java,
-                    "com.android.launcher3.config.FeatureFlags\$FlagState",
-                    String::class.java
-                )
-            }
+
+            val baseIconFactoryClazz = XposedHelpers.findClass(
+                "com.android.launcher3.icons.BaseIconFactory",
+                lpparam.classLoader
+            )
 
             when (Build.VERSION.SDK_INT) {
-                Build.VERSION_CODES.TIRAMISU -> {
-                    XposedBridge.hookMethod(
-                        lineageos20Method,
-                        GetDebugFlagHook
-                    )
-                }
-
+                Build.VERSION_CODES.TIRAMISU,
                 Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
-                    XposedBridge.hookMethod(
-                        lineageos21Method,
-                        GetDebugFlagHook
+
+                    XposedHelpers.findAndHookMethod(
+                        baseIconFactoryClazz,
+                        "getMonochromeDrawable",
+                        Drawable::class.java,
+                        MonoIconHook(lpparam)
                     )
                 }
 
                 Build.VERSION_CODES.VANILLA_ICE_CREAM -> {
+
                     XposedHelpers.findAndHookMethod(
-                        "com.android.launcher3.Flags",
-                        lpparam.classLoader,
-                        "forceMonochromeAppIcons",
-                        ForceMonoAppIconHook
+                        baseIconFactoryClazz,
+                        "getMonochromeDrawable",
+                        AdaptiveIconDrawable::class.java,
+                        MonoIconHook(lpparam)
                     )
                 }
 
@@ -115,29 +98,27 @@ class MainHook : IXposedHookLoadPackage {
         }
     }
 
-    object GetDebugFlagHook : XC_MethodHook() {
-        override fun afterHookedMethod(param: MethodHookParam) {
-            runCatching {
-                if ("ENABLE_FORCED_MONO_ICON" == param.args[1]) {
-                    prefs.reload()
-                    if (settings.enableForcedMonoIcon()) {
-                        XposedHelpers.setBooleanField(param.result, "mCurrentValue", true)
-                        XposedBridge.log("Mono Icon enabled.")
-                    }
-                }
-            }.onFailure {
-                XposedBridge.log(it)
-            }
-        }
-    }
+    class MonoIconHook(private val lpparam: LoadPackageParam) : XC_MethodHook() {
 
-    object ForceMonoAppIconHook : XC_MethodHook() {
         override fun afterHookedMethod(param: MethodHookParam) {
             runCatching {
+                if (param.result != null) {
+                    return
+                }
                 prefs.reload()
                 if (settings.enableForcedMonoIcon()) {
-                    param.result = true
-                    XposedBridge.log("Mono Icon enabled.")
+                    val base = param.args[0] as? Drawable ?: return
+                    val monoChromeIcon = MonochromeIconFactory(100).wrap(base)
+                    if (base is AdaptiveIconDrawable) {
+                        val clippedMonoDrawableClazz = XposedHelpers.findClass(
+                            "com.android.launcher3.icons.BaseIconFactory.ClippedMonoDrawable",
+                            lpparam.classLoader
+                        )
+                        param.result =
+                            XposedHelpers.newInstance(clippedMonoDrawableClazz, MonochromeIconFactory(100).wrap(base))
+                    } else {
+                        param.result = monoChromeIcon
+                    }
                 }
             }.onFailure {
                 XposedBridge.log(it)
