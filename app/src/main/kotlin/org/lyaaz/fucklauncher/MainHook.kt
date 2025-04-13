@@ -20,6 +20,7 @@ class MainHook : IXposedHookLoadPackage {
             return
         }
 
+        // Hook the double tap gesture
         runCatching {
             XposedBridge.hookMethod(
                 SimpleOnGestureListener::class.java.getDeclaredMethod(
@@ -32,43 +33,22 @@ class MainHook : IXposedHookLoadPackage {
             XposedBridge.log(it)
         }
 
+        // Hook the AdaptiveIconDrawable to force monochrome icons
         runCatching {
-
-            val baseIconFactoryClazz = XposedHelpers.findClass(
-                "com.android.launcher3.icons.BaseIconFactory",
-                lpparam.classLoader
-            )
-
-            when (Build.VERSION.SDK_INT) {
-                Build.VERSION_CODES.TIRAMISU,
-                Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
-
-                    XposedHelpers.findAndHookMethod(
-                        baseIconFactoryClazz,
-                        "getMonochromeDrawable",
-                        Drawable::class.java,
-                        MonoIconHook(lpparam)
-                    )
-                }
-
-                Build.VERSION_CODES.VANILLA_ICE_CREAM -> {
-
-                    XposedHelpers.findAndHookMethod(
-                        baseIconFactoryClazz,
-                        "getMonochromeDrawable",
-                        AdaptiveIconDrawable::class.java,
-                        MonoIconHook(lpparam)
-                    )
-                }
-
-                else -> {
-                    XposedBridge.log("Unsupported API level: ${Build.VERSION.SDK_INT}")
-                }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                XposedHelpers.findAndHookMethod(
+                    AdaptiveIconDrawable::class.java,
+                    "getMonochrome",
+                    MonoIconHook(lpparam)
+                )
+            } else {
+                XposedBridge.log("Unsupported API level: ${Build.VERSION.SDK_INT}")
             }
         }.onFailure {
             XposedBridge.log(it)
         }
 
+        // Hook the HiddenAppsFilter to auto-hide apps
         runCatching {
             XposedHelpers.findAndHookMethod(
                 "com.android.launcher3.lineage.trust.HiddenAppsFilter",
@@ -149,18 +129,8 @@ class MainHook : IXposedHookLoadPackage {
                 }
                 prefs.reload()
                 if (settings.enableForcedMonoIcon()) {
-                    val base = param.args[0] as? Drawable ?: return
-                    val monoChromeIcon = MonochromeIconFactory(100).wrap(base)
-                    if (base is AdaptiveIconDrawable) {
-                        val clippedMonoDrawableClazz = XposedHelpers.findClass(
-                            "com.android.launcher3.icons.BaseIconFactory.ClippedMonoDrawable",
-                            lpparam.classLoader
-                        )
-                        param.result =
-                            XposedHelpers.newInstance(clippedMonoDrawableClazz, MonochromeIconFactory(100).wrap(base))
-                    } else {
-                        param.result = monoChromeIcon
-                    }
+                    val monoChromeIcon = MonochromeIconFactory(100).wrap(param.thisObject as Drawable)
+                    param.result = monoChromeIcon
                 }
             }.onFailure {
                 XposedBridge.log(it)
