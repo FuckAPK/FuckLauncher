@@ -129,7 +129,8 @@ class MainHook : IXposedHookLoadPackage {
                 }
                 prefs.reload()
                 if (settings.enableForcedMonoIcon()) {
-                    val monoChromeIcon = MonochromeIconFactory(100).wrap(param.thisObject as Drawable)
+                    val drawable = param.thisObject as AdaptiveIconDrawable
+                    val monoChromeIcon = MonochromeIconFactory(drawable.foreground, drawable.background).wrap(drawable as Drawable)
                     param.result = monoChromeIcon
                 }
             }.onFailure {

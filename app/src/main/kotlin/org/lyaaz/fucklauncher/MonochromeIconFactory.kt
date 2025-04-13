@@ -31,7 +31,9 @@ import kotlin.math.roundToInt
  * Utility class to generate monochrome icons version for a given drawable.
  */
 @TargetApi(Build.VERSION_CODES.TIRAMISU)
-class MonochromeIconFactory internal constructor(iconBitmapSize: Int) : Drawable() {
+class MonochromeIconFactory internal constructor(backgroundDrawable: Drawable?, foregroundDrawable: Drawable?)
+    : AdaptiveIconDrawable(backgroundDrawable, foregroundDrawable, null) {
+
     private val mFlatBitmap: Bitmap
     private val mFlatCanvas: Canvas
     private val mCopyPaint: Paint
@@ -49,6 +51,7 @@ class MonochromeIconFactory internal constructor(iconBitmapSize: Int) : Drawable
     init {
         val extraFactor = AdaptiveIconDrawable.getExtraInsetFraction()
         val viewPortScale = 1 / (1 + 2 * extraFactor)
+        val iconBitmapSize = 100
         mBitmapSize = (iconBitmapSize * 2 * viewPortScale).roundToInt()
         mPixels = ByteArray(mBitmapSize * mBitmapSize)
         mEdgePixelLength = mBitmapSize * (mBitmapSize - iconBitmapSize) / 2
