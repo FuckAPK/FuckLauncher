@@ -65,6 +65,10 @@ fun SettingsScreen() {
         mutableStateOf(settings.enableForcedMonoIcon())
     }
 
+    var enableAutoHide by remember {
+        mutableStateOf(settings.enableAutoHide())
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
@@ -91,6 +95,19 @@ fun SettingsScreen() {
                     enableForceMonoIcon = it
                     prefs.edit {
                         putBoolean(Settings.PREF_ENABLE_FORCED_MONO_ICON, it)
+                    }
+                }
+            )
+        }
+        item {
+            SwitchPreferenceItem(
+                title = R.string.title_enable_auto_hide,
+                summary = R.string.summary_enable_auto_hide,
+                checked = enableAutoHide,
+                onCheckedChange = {
+                    enableAutoHide = it
+                    prefs.edit {
+                        putBoolean(Settings.PREF_ENABLE_AUTO_HIDE, it)
                     }
                 }
             )

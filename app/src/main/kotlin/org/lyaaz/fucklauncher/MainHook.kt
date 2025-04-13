@@ -2,8 +2,10 @@ package org.lyaaz.fucklauncher
 
 import android.app.AndroidAppHelper
 import android.content.ComponentName
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.database.Cursor
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
@@ -66,6 +68,46 @@ class MainHook : IXposedHookLoadPackage {
         }.onFailure {
             XposedBridge.log(it)
         }
+
+        runCatching {
+            XposedHelpers.findAndHookMethod(
+                "com.android.launcher3.lineage.trust.HiddenAppsFilter",
+                lpparam.classLoader,
+                "shouldShowApp",
+                ComponentName::class.java,
+                AutoHideHook(lpparam)
+            )
+        }.onFailure {
+            XposedBridge.log(it)
+        }.onSuccess {
+            runCatching {
+//                XposedHelpers.findAndHookMethod(
+//                    "com.android.launcher3.dragndrop.DragController",
+//                    lpparam.classLoader,
+//                    "callOnDragEnd",
+//                    RefreshAppsHook(lpparam)
+//                )
+                XposedHelpers.findAndHookMethod(
+                    "com.android.launcher3.model.ModelDbController",
+                    lpparam.classLoader,
+                    "insert",
+                    String::class.java,
+                    ContentValues::class.java,
+                    RefreshAppsHook(lpparam)
+                )
+                XposedHelpers.findAndHookMethod(
+                    "com.android.launcher3.model.ModelDbController",
+                    lpparam.classLoader,
+                    "delete",
+                    String::class.java,
+                    String::class.java,
+                    Array<String>::class.java,
+                    RefreshAppsHook(lpparam)
+                )
+            }.onFailure {
+                XposedBridge.log(it)
+            }
+        }
     }
 
     object OnDoubleTapHook : XC_MethodHook() {
@@ -119,6 +161,75 @@ class MainHook : IXposedHookLoadPackage {
                     } else {
                         param.result = monoChromeIcon
                     }
+                }
+            }.onFailure {
+                XposedBridge.log(it)
+            }
+        }
+    }
+
+    class AutoHideHook(private val lpparam: LoadPackageParam) : XC_MethodHook() {
+        override fun beforeHookedMethod(param: MethodHookParam) {
+            runCatching {
+                prefs.reload()
+                if (settings.enableAutoHide()) {
+                    val componentName = param.args?.get(0) as? ComponentName ?: return
+                    val mContext: Context = AndroidAppHelper.currentApplication()
+                    val modelDbControllerClazz = XposedHelpers.findClass(
+                        "com.android.launcher3.model.ModelDbController",
+                        lpparam.classLoader
+                    )
+                    val mDbController = XposedHelpers.newInstance(modelDbControllerClazz, mContext)
+                    val c = XposedHelpers.callMethod(
+                        mDbController,
+                        "query",
+                        "favorites",
+                        arrayOf("intent"),
+                        "itemType = ?",
+                        arrayOf("0"),
+                        "_id"
+                    ) as Cursor
+
+                    while (c.moveToNext()) {
+                        val intentStr = c.getString(0)
+                        if (intentStr != null) {
+                            val intent = Intent.parseUri(intentStr, 0)
+                            if (componentName.packageName == intent.component?.packageName) {
+                                param.result = false
+                                return
+                            }
+                        }
+                    }
+                }
+            }.onFailure {
+                XposedBridge.log(it)
+            }
+        }
+    }
+
+    class RefreshAppsHook(private val lpparam: LoadPackageParam) : XC_MethodHook() {
+        override fun afterHookedMethod(param: MethodHookParam) {
+            runCatching {
+                if (param.result is Int && param.result as Int <= 0) {
+                    return
+                }
+                prefs.reload()
+                if (settings.enableAutoHide()) {
+                    val launcherAppStateClazz = XposedHelpers.findClass(
+                        "com.android.launcher3.LauncherAppState",
+                        lpparam.classLoader
+                    )
+                    val mContext: Context = AndroidAppHelper.currentApplication()
+                    val mLauncherAppState = XposedHelpers.callStaticMethod(
+                        launcherAppStateClazz,
+                        "getInstance",
+                        mContext
+                    )
+                    val mModel = XposedHelpers.getObjectField(mLauncherAppState, "mModel")
+                    XposedHelpers.callMethod(
+                        mModel,
+                        "forceReload"
+                    )
                 }
             }.onFailure {
                 XposedBridge.log(it)
