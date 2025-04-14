@@ -2,12 +2,10 @@ package org.lyaaz.fucklauncher
 
 import android.app.AndroidAppHelper
 import android.content.ComponentName
-import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.database.Cursor
 import android.graphics.drawable.AdaptiveIconDrawable
-import android.graphics.drawable.Drawable
 import android.os.Build
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
@@ -15,18 +13,18 @@ import de.robv.android.xposed.*
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 
 class MainHook : IXposedHookLoadPackage {
-    override fun handleLoadPackage(lpparam: LoadPackageParam) {
+    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+        lpparam = loadPackageParam
         if (lpparam.packageName == BuildConfig.APPLICATION_ID) {
             return
         }
 
         // Hook the double tap gesture
         runCatching {
-            XposedBridge.hookMethod(
-                SimpleOnGestureListener::class.java.getDeclaredMethod(
-                    "onDoubleTap",
-                    MotionEvent::class.java
-                ),
+            XposedHelpers.findAndHookMethod(
+                SimpleOnGestureListener::class.java,
+                "onDoubleTap",
+                MotionEvent::class.java,
                 OnDoubleTapHook
             )
         }.onFailure {
@@ -36,10 +34,18 @@ class MainHook : IXposedHookLoadPackage {
         // Hook the AdaptiveIconDrawable to force monochrome icons
         runCatching {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                runCatching {
+                    XposedBridge.hookAllConstructors(
+                        BaseIconFactoryClazz,
+                        IconBitmapSizeHook
+                    )
+                }.onFailure {
+                    XposedBridge.log("Failed to load icon bitmap size: $it")
+                }
                 XposedHelpers.findAndHookMethod(
                     AdaptiveIconDrawable::class.java,
                     "getMonochrome",
-                    MonoIconHook(lpparam)
+                    MonoIconHook
                 )
             } else {
                 XposedBridge.log("Unsupported API level: ${Build.VERSION.SDK_INT}")
@@ -50,39 +56,26 @@ class MainHook : IXposedHookLoadPackage {
 
         // Hook the HiddenAppsFilter to auto-hide apps
         runCatching {
+
             XposedHelpers.findAndHookMethod(
-                "com.android.launcher3.lineage.trust.HiddenAppsFilter",
-                lpparam.classLoader,
+                hiddenAppsFilterClazz,
                 "shouldShowApp",
                 ComponentName::class.java,
-                AutoHideHook(lpparam)
+                AutoHideHook
             )
         }.onFailure {
             XposedBridge.log(it)
         }.onSuccess {
             runCatching {
-//                XposedHelpers.findAndHookMethod(
-//                    "com.android.launcher3.dragndrop.DragController",
-//                    lpparam.classLoader,
-//                    "callOnDragEnd",
-//                    RefreshAppsHook(lpparam)
-//                )
-                XposedHelpers.findAndHookMethod(
-                    "com.android.launcher3.model.ModelDbController",
-                    lpparam.classLoader,
+                XposedBridge.hookAllMethods(
+                    modelDbControllerClazz,
                     "insert",
-                    String::class.java,
-                    ContentValues::class.java,
-                    RefreshAppsHook(lpparam)
+                    RefreshAppsHook
                 )
-                XposedHelpers.findAndHookMethod(
-                    "com.android.launcher3.model.ModelDbController",
-                    lpparam.classLoader,
+                XposedBridge.hookAllMethods(
+                    modelDbControllerClazz,
                     "delete",
-                    String::class.java,
-                    String::class.java,
-                    Array<String>::class.java,
-                    RefreshAppsHook(lpparam)
+                    RefreshAppsHook
                 )
             }.onFailure {
                 XposedBridge.log(it)
@@ -120,7 +113,7 @@ class MainHook : IXposedHookLoadPackage {
         }
     }
 
-    class MonoIconHook(private val lpparam: LoadPackageParam) : XC_MethodHook() {
+    object MonoIconHook : XC_MethodHook() {
 
         override fun afterHookedMethod(param: MethodHookParam) {
             runCatching {
@@ -129,8 +122,11 @@ class MainHook : IXposedHookLoadPackage {
                 }
                 prefs.reload()
                 if (settings.enableForcedMonoIcon()) {
+                    if (Thread.currentThread().stackTrace.any { it.methodName == "getIcon" }) {
+                        return
+                    }
                     val drawable = param.thisObject as AdaptiveIconDrawable
-                    val monoChromeIcon = MonochromeIconFactory(drawable.foreground, drawable.background).wrap(drawable as Drawable)
+                    val monoChromeIcon = MonochromeIconFactory(mIconBitmapSize).wrap(drawable)
                     param.result = monoChromeIcon
                 }
             }.onFailure {
@@ -139,17 +135,13 @@ class MainHook : IXposedHookLoadPackage {
         }
     }
 
-    class AutoHideHook(private val lpparam: LoadPackageParam) : XC_MethodHook() {
+    object AutoHideHook : XC_MethodHook() {
         override fun beforeHookedMethod(param: MethodHookParam) {
             runCatching {
                 prefs.reload()
                 if (settings.enableAutoHide()) {
                     val componentName = param.args?.get(0) as? ComponentName ?: return
                     val mContext: Context = AndroidAppHelper.currentApplication()
-                    val modelDbControllerClazz = XposedHelpers.findClass(
-                        "com.android.launcher3.model.ModelDbController",
-                        lpparam.classLoader
-                    )
                     val mDbController = XposedHelpers.newInstance(modelDbControllerClazz, mContext)
                     val c = XposedHelpers.callMethod(
                         mDbController,
@@ -178,7 +170,7 @@ class MainHook : IXposedHookLoadPackage {
         }
     }
 
-    class RefreshAppsHook(private val lpparam: LoadPackageParam) : XC_MethodHook() {
+    object RefreshAppsHook : XC_MethodHook() {
         override fun afterHookedMethod(param: MethodHookParam) {
             runCatching {
                 if (param.result is Int && param.result as Int <= 0) {
@@ -186,10 +178,6 @@ class MainHook : IXposedHookLoadPackage {
                 }
                 prefs.reload()
                 if (settings.enableAutoHide()) {
-                    val launcherAppStateClazz = XposedHelpers.findClass(
-                        "com.android.launcher3.LauncherAppState",
-                        lpparam.classLoader
-                    )
                     val mContext: Context = AndroidAppHelper.currentApplication()
                     val mLauncherAppState = XposedHelpers.callStaticMethod(
                         launcherAppStateClazz,
@@ -208,12 +196,46 @@ class MainHook : IXposedHookLoadPackage {
         }
     }
 
+    object IconBitmapSizeHook : XC_MethodHook() {
+        override fun afterHookedMethod(param: MethodHookParam) {
+            mIconBitmapSize = XposedHelpers.getIntField(param.thisObject, "mIconBitmapSize")
+        }
+    }
+
     companion object {
         private val prefs: XSharedPreferences by lazy {
             XSharedPreferences(BuildConfig.APPLICATION_ID)
         }
         private val settings: Settings by lazy {
             Settings.getInstance(prefs)
+        }
+        private lateinit var lpparam: LoadPackageParam
+
+        private var mIconBitmapSize = 100
+
+        private val modelDbControllerClazz by lazy {
+            XposedHelpers.findClass(
+                "com.android.launcher3.model.ModelDbController",
+                lpparam.classLoader
+            )
+        }
+        private val BaseIconFactoryClazz by lazy {
+            XposedHelpers.findClass(
+                "com.android.launcher3.icons.BaseIconFactory",
+                lpparam.classLoader
+            )
+        }
+        private val launcherAppStateClazz by lazy {
+            XposedHelpers.findClass(
+                "com.android.launcher3.LauncherAppState",
+                lpparam.classLoader
+            )
+        }
+        private val hiddenAppsFilterClazz by lazy {
+            XposedHelpers.findClass(
+                "com.android.launcher3.lineage.trust.HiddenAppsFilter",
+                lpparam.classLoader
+            )
         }
     }
 }
