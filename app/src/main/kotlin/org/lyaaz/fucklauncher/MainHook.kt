@@ -7,6 +7,8 @@ import android.content.Intent
 import android.database.Cursor
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
 import de.robv.android.xposed.*
@@ -172,27 +174,30 @@ class MainHook : IXposedHookLoadPackage {
 
     object RefreshAppsHook : XC_MethodHook() {
         override fun afterHookedMethod(param: MethodHookParam) {
-            runCatching {
-                if (param.result is Int && param.result as Int <= 0) {
-                    return
-                }
-                prefs.reload()
-                if (settings.enableAutoHide()) {
-                    val mContext: Context = AndroidAppHelper.currentApplication()
-                    val mLauncherAppState = XposedHelpers.callStaticMethod(
-                        launcherAppStateClazz,
-                        "getInstance",
-                        mContext
-                    )
-                    val mModel = XposedHelpers.getObjectField(mLauncherAppState, "mModel")
-                    XposedHelpers.callMethod(
-                        mModel,
-                        "forceReload"
-                    )
-                }
-            }.onFailure {
-                XposedBridge.log(it)
+            if (param.result is Int && param.result as Int <= 0) {
+                return
             }
+
+            Handler(Looper.getMainLooper()).postDelayed({
+                runCatching {
+                    prefs.reload()
+                    if (settings.enableAutoHide()) {
+                        val mContext: Context = AndroidAppHelper.currentApplication()
+                        val mLauncherAppState = XposedHelpers.callStaticMethod(
+                            launcherAppStateClazz,
+                            "getInstance",
+                            mContext
+                        )
+                        val mModel = XposedHelpers.getObjectField(mLauncherAppState, "mModel")
+                        XposedHelpers.callMethod(
+                            mModel,
+                            "forceReload"
+                        )
+                    }
+                }.onFailure {
+                    XposedBridge.log(it)
+                }
+            }, 1000)
         }
     }
 
