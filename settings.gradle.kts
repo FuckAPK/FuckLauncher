@@ -22,3 +22,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Fuck Launcher"
 include(":app")
+include(":ui")
