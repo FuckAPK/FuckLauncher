@@ -144,7 +144,14 @@ class MainHook : IXposedHookLoadPackage {
                 if (settings.enableAutoHide()) {
                     val componentName = param.args?.get(0) as? ComponentName ?: return
                     val mContext: Context = AndroidAppHelper.currentApplication()
-                    val mDbController = XposedHelpers.newInstance(modelDbControllerClazz, mContext)
+                    val launcherAppState = XposedHelpers.callStaticMethod(
+                        launcherAppStateClazz,
+                        "getInstance",
+                        mContext
+                    )
+                    val mModel = XposedHelpers.getObjectField(launcherAppState, "model")
+                    val mDbController = XposedHelpers.getObjectField(mModel, "modelDbController")
+
                     val c = XposedHelpers.callMethod(
                         mDbController,
                         "query",
