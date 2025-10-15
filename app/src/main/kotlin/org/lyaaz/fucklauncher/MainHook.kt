@@ -152,7 +152,7 @@ class MainHook : IXposedHookLoadPackage {
                     val mModel = XposedHelpers.getObjectField(launcherAppState, "model")
                     val mDbController = XposedHelpers.getObjectField(mModel, "modelDbController")
 
-                    val c = if (Build.VERSION.SDK_INT >= 36) {
+                    val c = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
                         XposedHelpers.callMethod(
                             mDbController,
                             "query",
