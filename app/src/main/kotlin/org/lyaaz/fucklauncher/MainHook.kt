@@ -152,15 +152,26 @@ class MainHook : IXposedHookLoadPackage {
                     val mModel = XposedHelpers.getObjectField(launcherAppState, "model")
                     val mDbController = XposedHelpers.getObjectField(mModel, "modelDbController")
 
-                    val c = XposedHelpers.callMethod(
-                        mDbController,
-                        "query",
-                        "favorites",
-                        arrayOf("intent"),
-                        "itemType = ?",
-                        arrayOf("0"),
-                        "_id"
-                    ) as Cursor
+                    val c = if (Build.VERSION.SDK_INT >= 36) {
+                        XposedHelpers.callMethod(
+                            mDbController,
+                            "query",
+                            arrayOf("intent"),
+                            "itemType = ?",
+                            arrayOf("0"),
+                            "_id"
+                        ) as Cursor
+                    } else {
+                        XposedHelpers.callMethod(
+                            mDbController,
+                            "query",
+                            "favorites",
+                            arrayOf("intent"),
+                            "itemType = ?",
+                            arrayOf("0"),
+                            "_id"
+                        ) as Cursor
+                    }
 
                     while (c.moveToNext()) {
                         val intentStr = c.getString(0)
