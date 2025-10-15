@@ -206,7 +206,12 @@ class MainHook : IXposedHookLoadPackage {
                             "getInstance",
                             mContext
                         )
-                        val mModel = XposedHelpers.getObjectField(mLauncherAppState, "mModel")
+                        val mModel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                            XposedHelpers.getObjectField(mLauncherAppState, "model")
+                        } else {
+                            XposedHelpers.getObjectField(mLauncherAppState, "mModel")
+                        }
+
                         XposedHelpers.callMethod(
                             mModel,
                             "forceReload"
