@@ -28,23 +28,8 @@ class LockScreenReceiver : BroadcastReceiver() {
         Shell.cmd("input keyevent 223").exec()
     }
 
-    /**
-     * @noinspection deprecation
-     */
-    @SuppressLint("WorldReadableFiles")
     private fun getPrefs(context: Context): SharedPreferences {
         val prefsName = "${BuildConfig.APPLICATION_ID}_preferences"
-        return try {
-            @Suppress("DEPRECATION")
-            context.getSharedPreferences(
-                prefsName,
-                Context.MODE_WORLD_READABLE
-            )
-        } catch (ignore: SecurityException) {
-            context.getSharedPreferences(
-                prefsName,
-                Context.MODE_PRIVATE
-            )
-        }
+        return context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
     }
 }

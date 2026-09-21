@@ -160,7 +160,7 @@ class MainHook : IXposedHookLoadPackage {
                             "itemType = ?",
                             arrayOf("0"),
                             "_id"
-                        ) as Cursor
+                        ) as? Cursor
                     } else {
                         XposedHelpers.callMethod(
                             mDbController,
@@ -170,16 +170,18 @@ class MainHook : IXposedHookLoadPackage {
                             "itemType = ?",
                             arrayOf("0"),
                             "_id"
-                        ) as Cursor
+                        ) as? Cursor
                     }
 
-                    while (c.moveToNext()) {
-                        val intentStr = c.getString(0)
-                        if (intentStr != null) {
-                            val intent = Intent.parseUri(intentStr, 0)
-                            if (componentName.packageName == intent.component?.packageName) {
-                                param.result = false
-                                return
+                    c?.use { cursor ->
+                        while (cursor.moveToNext()) {
+                            val intentStr = cursor.getString(0)
+                            if (intentStr != null) {
+                                val intent = Intent.parseUri(intentStr, 0)
+                                if (componentName.packageName == intent.component?.packageName) {
+                                    param.result = false
+                                    return
+                                }
                             }
                         }
                     }
